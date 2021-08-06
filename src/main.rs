@@ -2,9 +2,13 @@ use bollard::{
     models::{ContainerSummaryInner, ImageSummary},
     Docker,
 };
+use chrono::{DateTime, FixedOffset, NaiveDateTime};
 use nu_errors::ShellError;
 use nu_plugin::{serve_plugin, Plugin};
-use nu_protocol::{CallInfo, ReturnValue, Signature, SyntaxShape};
+use nu_protocol::{
+    CallInfo, Dictionary, Primitive, ReturnSuccess, ReturnValue, Signature, SyntaxShape,
+    UntaggedValue,
+};
 use nu_source::HasSpan;
 
 #[derive(serde::Serialize)]
@@ -48,6 +52,50 @@ impl Implementation {
     }
 }
 
+fn convert_timestamp(row: &mut Dictionary, key: &str) {
+    let data = match row.get_mut_data_by_key(key) {
+        Some(d) => d,
+        None => return,
+    };
+
+    let timestamp = match data.value {
+        UntaggedValue::Primitive(Primitive::Int(timestamp)) => timestamp,
+        _ => return,
+    };
+
+    let date_time = DateTime::from_utc(
+        NaiveDateTime::from_timestamp(timestamp, 0),
+        FixedOffset::east(0),
+    );
+
+    data.value = UntaggedValue::Primitive(Primitive::Date(date_time));
+}
+
+fn convert_byte_size(row: &mut Dictionary, key: &str) {
+    let data = match row.get_mut_data_by_key(key) {
+        Some(d) => d,
+        None => return,
+    };
+
+    let size = match data.value {
+        UntaggedValue::Primitive(Primitive::Int(size)) => size as u64,
+        _ => return,
+    };
+
+    data.value = UntaggedValue::Primitive(Primitive::Filesize(size));
+}
+
+fn row_cleanup(value: &mut nu_protocol::Value) {
+    let row = match &mut value.value {
+        UntaggedValue::Row(row) => row,
+        _ => return,
+    };
+
+    convert_timestamp(row, "Created");
+    convert_byte_size(row, "Size");
+    convert_byte_size(row, "VirtualSize");
+}
+
 impl Plugin for Implementation {
     fn config(&mut self) -> Result<Signature, ShellError> {
         Ok(Signature::build("dock")
@@ -81,7 +129,7 @@ impl Plugin for Implementation {
             ShellError::labeled_error(format!("dock failed: {}", e), "error", &call_info.name_tag)
         })?;
 
-        let values =
+        let mut values =
             serde_nu::to_success_return_values(rows, &call_info.name_tag).map_err(|e| {
                 ShellError::labeled_error(
                     format!("failed to convert output values: {}", e),
@@ -89,6 +137,14 @@ impl Plugin for Implementation {
                     &call_info.name_tag,
                 )
             })?;
+
+        for result in &mut values {
+            if let Ok(success) = result {
+                if let ReturnSuccess::Value(v) = success {
+                    row_cleanup(v);
+                }
+            }
+        }
 
         Ok(values)
     }
