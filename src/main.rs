@@ -85,6 +85,10 @@ fn convert_byte_size(row: &mut Dictionary, key: &str) {
     data.value = UntaggedValue::Primitive(Primitive::Filesize(size));
 }
 
+fn remove_column(row: &mut Dictionary, key: &str) {
+    row.entries.remove(key);
+}
+
 fn row_cleanup(value: &mut nu_protocol::Value) {
     let row = match &mut value.value {
         UntaggedValue::Row(row) => row,
@@ -93,7 +97,10 @@ fn row_cleanup(value: &mut nu_protocol::Value) {
 
     convert_timestamp(row, "Created");
     convert_byte_size(row, "Size");
-    convert_byte_size(row, "VirtualSize");
+    remove_column(row, "VirtualSize");
+    remove_column(row, "SharedSize");
+    remove_column(row, "Containers");
+    remove_column(row, "ParentId");
 }
 
 impl Plugin for Implementation {
