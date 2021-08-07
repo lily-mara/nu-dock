@@ -585,6 +585,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "nu-dock"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bollard",
+ "chrono",
+ "nu-errors",
+ "nu-plugin",
+ "nu-protocol",
+ "nu-source",
+ "serde",
+ "serde-nu",
+ "tokio",
+]
+
+[[package]]
 name = "nu-errors"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -694,22 +710,6 @@ dependencies = [
  "nu-protocol",
  "nu-source",
  "num-traits",
-]
-
-[[package]]
-name = "nu_plugin_dock"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bollard",
- "chrono",
- "nu-errors",
- "nu-plugin",
- "nu-protocol",
- "nu-source",
- "serde",
- "serde-nu",
- "tokio",
 ]
 
 [[package]]

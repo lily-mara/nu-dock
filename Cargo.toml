@@ -1,5 +1,5 @@
 [package]
-name = "nu_plugin_dock"
+name = "nu-dock"
 version = "0.1.0"
 edition = "2018"
 
@@ -14,3 +14,15 @@ anyhow = "1"
 bollard = "0.11"
 tokio = { version = "1", features = ["full"] }
 chrono = "0.4"
+
+[[bin]]
+name = "nu_plugin_dock"
+path = "bin/dock.rs"
+
+[[bin]]
+name = "nu_plugin_dock_containers"
+path = "bin/containers.rs"
+
+[[bin]]
+name = "nu_plugin_dock_images"
+path = "bin/images.rs"
